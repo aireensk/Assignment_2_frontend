@@ -3,13 +3,48 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Task 2 Starter Template</title>
+    <title>Shop Website</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>Task 2 Starter Template</h1>
-    <button id="callFunction">Call Function</button>
-    <div id="result">Results will appear here...</div>
+    <h1>Shop Website</h1>
+
+    <!-- Authentication Section -->
+    <h2>User Authentication</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="signup">Sign Up</button>
+    <button id="login">Login</button>
+    <p id="authMessage"></p>
+
+    <!-- Product Management Section -->
+    <h2>Product Management</h2>
+    <input type="text" id="productName" placeholder="Product Name" />
+    <input type="number" id="productQuantity" placeholder="Quantity" />
+    <input type="text" id="productCategory" placeholder="Category" />
+    <button id="addProduct">Add Product</button>
+    
+    <!-- Search & Filter Section -->
+    <h2>Search Products</h2>
+    <input type="text" id="searchQuery" placeholder="Search by name" />
+    <select id="filterCategory">
+      <option value="">All Categories</option>
+    </select>
+    <button id="searchProducts">Search</button>
+
+    <!-- Low Stock Alerts -->
+    <h2>Low Stock Alerts</h2>
+    <button id="lowStockBtn">Show Low Stock Products</button>
+    <ul id="lowStockList"></ul>
+
+    <!-- Product List -->
+    <h2>Products</h2>
+    <ul id="productList"></ul>
+
+    <!-- Cart System -->
+    <h2>Shopping Cart</h2>
+    <ul id="cartList"></ul>
+    <button id="checkout">Checkout</button>
 
     <script src="client.js"></script>
   </body>
