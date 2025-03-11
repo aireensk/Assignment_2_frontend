@@ -1,65 +1,83 @@
 // Base API URL (Update if needed)
 const API_URL = "/api/products";
 
-// Handle user sign-up
-const signUp = async () => {
-  const resultElement = document.getElementById("result");
-  resultElement.textContent = "Loading...";
+// Detect the current page
+const page = window.location.pathname;
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  try {
-    const response = await fetch(`${API_URL}/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    resultElement.textContent = data.message || "Sign-up successful!";
-  } catch (error) {
-    resultElement.textContent = `Error: ${error.message}`;
+// Check if user is logged in
+const checkAuth = async () => {
+  const token = localStorage.getItem("token");
+  if (!token && page.includes("basket.html")) {
+    alert("You must be logged in to access the cart.");
+    window.location.href = "login.html";
   }
 };
 
-// Handle user login
-const login = async () => {
-  const resultElement = document.getElementById("result");
-  resultElement.textContent = "Loading...";
+// Handle user sign-up (login.html)
+if (page.includes("login.html")) {
+  document.getElementById("signup").addEventListener("click", async () => {
+    const resultElement = document.getElementById("result");
+    resultElement.textContent = "Loading...";
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-  try {
-    const response = await fetch(`${API_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch(`${API_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+      const data = await response.json();
+      resultElement.textContent = "Sign-up successful! Please log in.";
+    } catch (error) {
+      resultElement.textContent = `Error: ${error.message}`;
     }
+  });
 
-    const data = await response.json();
-    resultElement.textContent = data.token ? "Login successful!" : "Login failed!";
-  } catch (error) {
-    resultElement.textContent = `Error: ${error.message}`;
-  }
-};
+  // Handle user login
+  document.getElementById("login").addEventListener("click", async () => {
+    const resultElement = document.getElementById("result");
+    resultElement.textContent = "Loading...";
 
-// Fetch all products (with search and filter)
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+      const data = await response.json();
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        resultElement.textContent = "Login successful! Redirecting...";
+        setTimeout(() => (window.location.href = "index.html"), 1000);
+      } else {
+        resultElement.textContent = "Login failed!";
+      }
+    } catch (error) {
+      resultElement.textContent = `Error: ${error.message}`;
+    }
+  });
+}
+
+// Fetch all products (index.html)
 const getProducts = async () => {
+  if (!document.getElementById("result")) return;
+
   const resultElement = document.getElementById("result");
   resultElement.textContent = "Loading...";
 
-  const searchQuery = document.getElementById("searchQuery").value;
-  const category = document.getElementById("filterCategory").value;
+  const searchQuery = document.getElementById("searchQuery")?.value || "";
+  const category = document.getElementById("filterCategory")?.value || "";
 
   let url = `${API_URL}/products`;
   if (searchQuery || category) {
@@ -68,31 +86,34 @@ const getProducts = async () => {
 
   try {
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
 
     const data = await response.json();
-    resultElement.innerHTML = data.map(product => 
-      `<li>${product.name} - ${product.quantity} in stock 
+    resultElement.innerHTML = data
+      .map(
+        (product) => `
+      <li>${product.name} - ${product.quantity} in stock 
         <button onclick="deleteProduct(${product.id})">Delete</button>
         <button onclick="updateProduct(${product.id})">Update Quantity</button>
         <button onclick="addToCart(${product.id})">Add to Cart</button>
       </li>`
-    ).join("");
+      )
+      .join("");
   } catch (error) {
     resultElement.textContent = `Error: ${error.message}`;
   }
 };
 
-// Add a new product
+// Add a product (index.html)
 const addProduct = async () => {
+  if (!document.getElementById("result")) return;
+
   const resultElement = document.getElementById("result");
   resultElement.textContent = "Loading...";
 
-  const name = document.getElementById("productName").value;
-  const quantity = document.getElementById("productQuantity").value;
-  const category = document.getElementById("productCategory").value;
+  const name = document.getElementById("productName")?.value;
+  const quantity = document.getElementById("productQuantity")?.value;
+  const category = document.getElementById("productCategory")?.value;
 
   try {
     const response = await fetch(`${API_URL}/products`, {
@@ -101,9 +122,7 @@ const addProduct = async () => {
       body: JSON.stringify({ name, quantity, category }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
 
     await response.json();
     getProducts(); // Refresh product list
@@ -112,8 +131,10 @@ const addProduct = async () => {
   }
 };
 
-// Delete a product
+// Delete a product (index.html)
 const deleteProduct = async (id) => {
+  if (!document.getElementById("result")) return;
+
   const resultElement = document.getElementById("result");
   resultElement.textContent = "Loading...";
 
@@ -124,9 +145,7 @@ const deleteProduct = async (id) => {
       body: JSON.stringify({ id }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
 
     await response.json();
     getProducts(); // Refresh list after deletion
@@ -134,3 +153,51 @@ const deleteProduct = async (id) => {
     resultElement.textContent = `Error: ${error.message}`;
   }
 };
+
+// ---------- CART FUNCTIONALITY (basket.html) ----------
+if (page.includes("basket.html")) {
+  checkAuth(); // Ensure user is logged in
+
+  const loadCart = () => {
+    const cartList = document.getElementById("cartList");
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    if (cart.length === 0) {
+      cartList.innerHTML = "<p>Your cart is empty.</p>";
+      return;
+    }
+
+    cartList.innerHTML = cart
+      .map(
+        (item, index) => `
+      <li>${item.name} - ${item.quantity}
+        <button onclick="removeFromCart(${index})">Remove</button>
+      </li>`
+      )
+      .join("");
+  };
+
+  const addToCart = (id) => {
+    fetch(`${API_URL}/products/${id}`)
+      .then((res) => res.json())
+      .then((product) => {
+        let cart = JSON.parse(localStorage.getItem("cart")) || [];
+        cart.push({ id: product.id, name: product.name, quantity: 1 });
+        localStorage.setItem("cart", JSON.stringify(cart));
+        alert("Added to cart!");
+      });
+  };
+
+  const removeFromCart = (index) => {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    cart.splice(index, 1);
+    localStorage.setItem("cart", JSON.stringify(cart));
+    loadCart();
+  };
+
+  document.getElementById("checkout").addEventListener("click", () => {
+    alert("Checkout not implemented yet!"); // Implement backend logic later
+  });
+
+  loadCart(); // Load cart on page load
+}
