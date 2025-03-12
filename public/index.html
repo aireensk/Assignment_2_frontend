@@ -1,51 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shop Website</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <h1>Shop Website</h1>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A's Siop - Clothing Shop</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header id="header">
+    <h1>A's Siop</h1>
+    <a href="basket.html" id="view-basket">View Basket</a>
+  </header>
 
-    <!-- Authentication Section -->
-    <h2>User Authentication</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button id="signup">Sign Up</button>
-    <button id="login">Login</button>
-    <p id="authMessage"></p>
+  <main>
+    <h2>Welcome to Our Shop</h2>
 
-    <!-- Product Management Section -->
-    <h2>Product Management</h2>
-    <input type="text" id="productName" placeholder="Product Name" />
-    <input type="number" id="productQuantity" placeholder="Quantity" />
-    <input type="text" id="productCategory" placeholder="Category" />
-    <button id="addProduct">Add Product</button>
-    
-    <!-- Search & Filter Section -->
-    <h2>Search Products</h2>
-    <input type="text" id="searchQuery" placeholder="Search by name" />
-    <select id="filterCategory">
-      <option value="">All Categories</option>
-    </select>
-    <button id="searchProducts">Search</button>
+    <div id="filters">
+      <select id="category-filter">
+        <option value="">All Categories</option>
+        <option value="clothes">Clothes</option>
+        <option value="accessories">Accessories</option>
+        <option value="shoes">Shoes</option>
+      </select>
 
-    <!-- Low Stock Alerts -->
-    <h2>Low Stock Alerts</h2>
-    <button id="lowStockBtn">Show Low Stock Products</button>
-    <ul id="lowStockList"></ul>
+      <input type="text" id="search-input" placeholder="Search products..." />
+    </div>
 
-    <!-- Product List -->
-    <h2>Products</h2>
-    <ul id="productList"></ul>
+    <div id="products">
+      <!-- Products will be loaded here -->
+    </div>
+  </main>
 
-    <!-- Cart System -->
-    <h2>Shopping Cart</h2>
-    <ul id="cartList"></ul>
-    <button id="checkout">Checkout</button>
-
-    <script src="client.js"></script>
-  </body>
+  <script src="client.js"></script>
+</body>
 </html>

@@ -1,203 +1,164 @@
-// Base API URL (Update if needed)
-const API_URL = "/api/products";
+document.addEventListener("DOMContentLoaded", () => {
+  const productsContainer = document.getElementById("products");
+  const categoryFilter = document.getElementById("category-filter");
+  const searchInput = document.getElementById("search-input");
 
-// Detect the current page
-const page = window.location.pathname;
-
-// Check if user is logged in
-const checkAuth = async () => {
-  const token = localStorage.getItem("token");
-  if (!token && page.includes("basket.html")) {
-    alert("You must be logged in to access the cart.");
-    window.location.href = "login.html";
-  }
-};
-
-// Handle user sign-up (login.html)
-if (page.includes("login.html")) {
-  document.getElementById("signup").addEventListener("click", async () => {
-    const resultElement = document.getElementById("result");
-    resultElement.textContent = "Loading...";
-
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-
+  // Fetch products from backend
+  const fetchProducts = async (category = "", search = "") => {
     try {
-      const response = await fetch(`${API_URL}/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(`/api/products?category=${category}&search=${search}`);
+      
+      // Check if the response is successful and returns JSON
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
 
-      if (!response.ok) throw new Error(`Error: ${response.status}`);
+      const contentType = response.headers.get("Content-Type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Expected JSON response, but got something else.");
+      }
 
       const data = await response.json();
-      resultElement.textContent = "Sign-up successful! Please log in.";
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Clear current products
+      productsContainer.innerHTML = '';
+
+      // Render products
+      data.forEach(product => {
+        const productCard = document.createElement("div");
+        productCard.classList.add("product");
+        productCard.innerHTML = `
+          <h3>${product.name}</h3>
+          <p>${product.price} USD</p>
+          <p>Category: ${product.category}</p>
+          <input type="number" id="quantity-${product.id}" value="1" min="1" max="${product.quantity}" />
+          <button data-product-id="${product.id}">Add to Basket</button>
+        `;
+
+        // Add event listener for adding to basket
+        const addButton = productCard.querySelector("button");
+        addButton.addEventListener("click", () => addToBasket(product.id));
+
+        productsContainer.appendChild(productCard);
+      });
     } catch (error) {
-      resultElement.textContent = `Error: ${error.message}`;
+      alert("Error fetching products: " + error.message);
     }
+  };
+
+  // Fetch products when category or search changes
+  categoryFilter.addEventListener("change", () => {
+    fetchProducts(categoryFilter.value, searchInput.value);
   });
 
-  // Handle user login
-  document.getElementById("login").addEventListener("click", async () => {
-    const resultElement = document.getElementById("result");
-    resultElement.textContent = "Loading...";
+  searchInput.addEventListener("input", () => {
+    fetchProducts(categoryFilter.value, searchInput.value);
+  });
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+  // Add product to basket
+  const addToBasket = async (productId) => {
+    const quantity = document.getElementById(`quantity-${productId}`).value;
 
     try {
-      const response = await fetch(`${API_URL}/login`, {
+      const response = await fetch("/api/basket", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ product_id: productId, quantity: quantity }),
       });
 
-      if (!response.ok) throw new Error(`Error: ${response.status}`);
-
-      const data = await response.json();
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        resultElement.textContent = "Login successful! Redirecting...";
-        setTimeout(() => (window.location.href = "index.html"), 1000);
+      const result = await response.json();
+      if (result.success) {
+        alert("Product added to basket!");
       } else {
-        resultElement.textContent = "Login failed!";
+        alert("Error adding product to basket.");
       }
     } catch (error) {
-      resultElement.textContent = `Error: ${error.message}`;
+      alert("Error: " + error.message);
     }
-  });
-}
-
-// Fetch all products (index.html)
-const getProducts = async () => {
-  if (!document.getElementById("result")) return;
-
-  const resultElement = document.getElementById("result");
-  resultElement.textContent = "Loading...";
-
-  const searchQuery = document.getElementById("searchQuery")?.value || "";
-  const category = document.getElementById("filterCategory")?.value || "";
-
-  let url = `${API_URL}/products`;
-  if (searchQuery || category) {
-    url += `?search=${searchQuery}&category=${category}`;
-  }
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-
-    const data = await response.json();
-    resultElement.innerHTML = data
-      .map(
-        (product) => `
-      <li>${product.name} - ${product.quantity} in stock 
-        <button onclick="deleteProduct(${product.id})">Delete</button>
-        <button onclick="updateProduct(${product.id})">Update Quantity</button>
-        <button onclick="addToCart(${product.id})">Add to Cart</button>
-      </li>`
-      )
-      .join("");
-  } catch (error) {
-    resultElement.textContent = `Error: ${error.message}`;
-  }
-};
-
-// Add a product (index.html)
-const addProduct = async () => {
-  if (!document.getElementById("result")) return;
-
-  const resultElement = document.getElementById("result");
-  resultElement.textContent = "Loading...";
-
-  const name = document.getElementById("productName")?.value;
-  const quantity = document.getElementById("productQuantity")?.value;
-  const category = document.getElementById("productCategory")?.value;
-
-  try {
-    const response = await fetch(`${API_URL}/products`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, quantity, category }),
-    });
-
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-
-    await response.json();
-    getProducts(); // Refresh product list
-  } catch (error) {
-    resultElement.textContent = `Error: ${error.message}`;
-  }
-};
-
-// Delete a product (index.html)
-const deleteProduct = async (id) => {
-  if (!document.getElementById("result")) return;
-
-  const resultElement = document.getElementById("result");
-  resultElement.textContent = "Loading...";
-
-  try {
-    const response = await fetch(`${API_URL}/products`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-
-    if (!response.ok) throw new Error(`Error: ${response.status}`);
-
-    await response.json();
-    getProducts(); // Refresh list after deletion
-  } catch (error) {
-    resultElement.textContent = `Error: ${error.message}`;
-  }
-};
-
-// ---------- CART FUNCTIONALITY (basket.html) ----------
-if (page.includes("basket.html")) {
-  checkAuth(); // Ensure user is logged in
-
-  const loadCart = () => {
-    const cartList = document.getElementById("cartList");
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-    if (cart.length === 0) {
-      cartList.innerHTML = "<p>Your cart is empty.</p>";
-      return;
-    }
-
-    cartList.innerHTML = cart
-      .map(
-        (item, index) => `
-      <li>${item.name} - ${item.quantity}
-        <button onclick="removeFromCart(${index})">Remove</button>
-      </li>`
-      )
-      .join("");
   };
 
-  const addToCart = (id) => {
-    fetch(`${API_URL}/products/${id}`)
-      .then((res) => res.json())
-      .then((product) => {
-        let cart = JSON.parse(localStorage.getItem("cart")) || [];
-        cart.push({ id: product.id, name: product.name, quantity: 1 });
-        localStorage.setItem("cart", JSON.stringify(cart));
-        alert("Added to cart!");
+  // Initial fetch of products
+  fetchProducts();
+});
+
+// Basket page functionality
+document.addEventListener("DOMContentLoaded", () => {
+  const basketContainer = document.getElementById("basket");
+
+  // Fetch basket items from backend
+  const fetchBasket = async () => {
+    try {
+      const response = await fetch("/api/basket");
+
+      // Check if the response is successful and returns JSON
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const contentType = response.headers.get("Content-Type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Expected JSON response, but got something else.");
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Clear current basket
+      basketContainer.innerHTML = '';
+
+      if (data.length === 0) {
+        basketContainer.innerHTML = "<p>Your basket is empty.</p>";
+      } else {
+        // Render basket items
+        data.forEach(item => {
+          const basketItem = document.createElement("div");
+          basketItem.classList.add("basket-item");
+          basketItem.innerHTML = `
+            <h4>${item.name}</h4>
+            <p>Price: ${item.price} USD</p>
+            <p>Quantity: ${item.quantity}</p>
+            <button data-basket-id="${item.id}">Remove</button>
+          `;
+          basketContainer.appendChild(basketItem);
+
+          // Add event listener for removing items from basket
+          const removeButton = basketItem.querySelector("button");
+          removeButton.addEventListener("click", () => removeFromBasket(item.id));
+        });
+      }
+    } catch (error) {
+      alert("Error fetching basket: " + error.message);
+    }
+  };
+
+  // Remove product from basket
+  const removeFromBasket = async (basketId) => {
+    try {
+      const response = await fetch(`/api/basket/${basketId}`, {
+        method: "DELETE",
       });
+
+      const result = await response.json();
+      if (result.success) {
+        alert("Product removed from basket!");
+        fetchBasket(); // Re-fetch the basket to update UI
+      } else {
+        alert("Error removing product from basket.");
+      }
+    } catch (error) {
+      alert("Error: " + error.message);
+    }
   };
 
-  const removeFromCart = (index) => {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    cart.splice(index, 1);
-    localStorage.setItem("cart", JSON.stringify(cart));
-    loadCart();
-  };
-
-  document.getElementById("checkout").addEventListener("click", () => {
-    alert("Checkout not implemented yet!"); // Implement backend logic later
-  });
-
-  loadCart(); // Load cart on page load
-}
+  // Initial fetch of basket
+  fetchBasket();
+});
